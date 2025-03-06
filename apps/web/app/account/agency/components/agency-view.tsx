@@ -1,21 +1,24 @@
 "use client";
 import React, { useState } from "react";
 import classNames from "classnames";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import type { GetAgencyAccountDetailsQuery } from "../../../../__generated__/graphql";
 import { useAgencySections } from "../../constants";
 import { getRoute } from "../../../../constants/routes";
+import FullScreenLoader from "../../components/full-screen-loader";
 
 export type AgencyViewData = NonNullable<
   GetAgencyAccountDetailsQuery["getCurrentUserAgency"]
 >;
 
 export default function AgencyView({
-  defaultSection,
   data,
+  loading,
+  defaultSection,
 }: {
+  data: GetAgencyAccountDetailsQuery["getCurrentUserAgency"];
   defaultSection: number;
-  data: AgencyViewData;
+  loading: boolean;
 }) {
   const [selectedSection, setSelectedSection] = useState(
     isNaN(defaultSection) ? 0 : defaultSection,
@@ -23,6 +26,7 @@ export default function AgencyView({
   const router = useRouter();
   const ACCOUNT_SECTIONS = useAgencySections();
   const SelectedComponent = ACCOUNT_SECTIONS[selectedSection]?.component;
+  if (!loading && !data) return redirect(getRoute("Home"));
   return (
     <div className="mx-auto max-w-7xl lg:flex lg:gap-x-16 lg:px-8">
       <h2 className="sr-only">Agency Settings</h2>
@@ -46,7 +50,7 @@ export default function AgencyView({
                       setSelectedSection(i);
                       router.push(
                         `${getRoute("AccountAgency")}/?section=${i}&agency=${
-                          data.agency.username
+                          data?.agency.username
                         }`,
                       );
                     }
@@ -69,7 +73,13 @@ export default function AgencyView({
           </ul>
         </nav>
       </aside>
-      {SelectedComponent ? <SelectedComponent data={data} /> : null}
+      {loading ? (
+        <FullScreenLoader className="!h-full" />
+      ) : (
+        <>
+          {SelectedComponent && data ? <SelectedComponent data={data} /> : null}
+        </>
+      )}
     </div>
   );
 }

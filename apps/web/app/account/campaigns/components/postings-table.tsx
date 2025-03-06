@@ -4,9 +4,12 @@ import { createColumnHelper } from "@tanstack/react-table";
 import Table from "ui/table";
 import Link from "next/link";
 import { ArrowSquareOut, PencilSimple } from "@phosphor-icons/react";
+import { redirect } from "next/navigation";
 import type { GetUserPostingsQuery } from "../../../../__generated__/graphql";
 import { getCurrency } from "../../../campaigns/utils";
-import { Route } from "../../../../constants/routes";
+import { getRoute, Route } from "../../../../constants/routes";
+import FullScreenLoader from "../../components/full-screen-loader";
+import EarningsInfo from "./earnings-info";
 
 type Posting = NonNullable<GetUserPostingsQuery["postings"]>[number];
 
@@ -76,25 +79,38 @@ const columns = [
 ];
 
 export default function PostingsTable({
-  postings,
-  showEarnings,
+  data,
+  loading,
 }: {
-  postings: GetUserPostingsQuery["postings"];
-  showEarnings: boolean;
+  data: GetUserPostingsQuery | undefined;
+  loading: boolean;
 }) {
+  const postings = data?.postings || [];
+  const user = data?.user;
+  if (loading) return <FullScreenLoader />;
+  if (!user?.agencies.length) return redirect(getRoute("AgencyOnboarding"));
+  const totalEarnings = postings.reduce(
+    (acc, curr) => curr.referralEarnings + acc,
+    0,
+  );
   return (
-    <Table
-      columns={[
-        ...columns,
-        ...(showEarnings
-          ? [
-              columnHelper.accessor("referralEarnings", {
-                header: "Earnings",
-              }),
-            ]
-          : []),
-      ]}
-      data={postings}
-    />
+    <>
+      <Table
+        columns={[
+          ...columns,
+          ...(totalEarnings
+            ? [
+                columnHelper.accessor("referralEarnings", {
+                  header: "Earnings",
+                }),
+              ]
+            : []),
+        ]}
+        data={postings}
+      />
+      {totalEarnings ? (
+        <EarningsInfo title="Total Earnings" totalEarnings={totalEarnings} />
+      ) : null}
+    </>
   );
 }

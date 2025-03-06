@@ -1,19 +1,22 @@
 "use client";
 import React, { useState } from "react";
 import classNames from "classnames";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { useAccountSections } from "../constants";
 import type { GetAccountDetailsQuery } from "../../../__generated__/graphql";
 import { getRoute } from "../../../constants/routes";
+import FullScreenLoader from "./full-screen-loader";
 
 export type AccountSectionData = NonNullable<GetAccountDetailsQuery["user"]>;
 
 export default function AccountView({
-  defaultSection,
   data,
+  defaultSection,
+  loading,
 }: {
+  data: GetAccountDetailsQuery["user"];
   defaultSection: number;
-  data: AccountSectionData;
+  loading: boolean;
 }) {
   const [selectedSection, setSelectedSection] = useState(
     isNaN(defaultSection) ? 0 : defaultSection,
@@ -21,6 +24,9 @@ export default function AccountView({
   const router = useRouter();
   const ACCOUNT_SECTIONS = useAccountSections();
   const SelectedComponent = ACCOUNT_SECTIONS[selectedSection]?.component;
+
+  if (!data && !loading) return redirect(getRoute("Home"));
+
   return (
     <div className="mx-auto max-w-7xl lg:flex lg:gap-x-16 lg:px-8">
       <h2 className="sr-only">General Settings</h2>
@@ -63,7 +69,13 @@ export default function AccountView({
           </ul>
         </nav>
       </aside>
-      {SelectedComponent ? <SelectedComponent data={data} /> : null}
+      {loading ? (
+        <FullScreenLoader className="!h-full" />
+      ) : (
+        <>
+          {SelectedComponent && data ? <SelectedComponent data={data} /> : null}
+        </>
+      )}
     </div>
   );
 }

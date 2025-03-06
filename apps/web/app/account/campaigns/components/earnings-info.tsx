@@ -2,11 +2,11 @@ import React from "react";
 import { REFERRAL_RATES } from "commons/referral";
 
 export default function EarningsInfo({
-  title,
   totalEarnings,
+  title,
 }: {
-  title: string;
   totalEarnings: number;
+  title: string;
 }) {
   return (
     <div className="mt-6">
